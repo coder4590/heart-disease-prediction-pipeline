@@ -16,141 +16,183 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from ucimlrepo import fetch_ucirepo 
 
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_colwidth', None)
-
+# fetch dataset 
 heart_disease = fetch_ucirepo(id=45) 
     
 # data (as pandas dataframes) 
 X = heart_disease.data.features 
 Y= heart_disease.data.targets 
 
-def clean_data(X,Y):
+def analysis_data():
 
-    df = X.copy()
-    df['num'] = Y.values
+    
+    
+    # metadata 
+    print(heart_disease.metadata) 
+    
+    # variable information 
+    print(heart_disease.variables)
+
+    print("Little detail of the like of hte data which are we working on")
+    print(f"Columns name and type : {X.columns.tolist()}")
+    print(f"column name of the target columns : {Y.columns.tolist()}")
+    print(f"Data types of the columns : {X.dtypes}")
+    print(f"Other type of detail : {X.describe()}")
+    print(f"Length of the total data: {len(X)}")
+
+    # 1. Bar plot of column names (just for visual)
+    plt.figure(figsize=(12, 6))
+    plt.barh(range(len(X.columns)), [1]*len(X.columns))
+    plt.yticks(range(len(X.columns)), X.columns)
+    plt.title('Column Names')
+    plt.xlabel('Has Column')
+    plt.tight_layout()
+    plt.savefig('Columns.png')
+    
+    
+    # 2. Data types as bar plot
+    dtype_counts = X.dtypes.value_counts()
+    plt.figure(figsize=(6, 4))
+    dtype_counts.plot(kind='bar', color='steelblue')
+    plt.title('Data Types Distribution')
+    plt.xlabel('Data Type')
+    plt.ylabel('Count')
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig('Datatype.png')
+    
+    
+    # 3. Describe as heatmap
+    desc = X.describe()
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(desc.iloc[:, :10], annot=True, cmap='coolwarm', fmt='.1f')
+    plt.title('Statistical Description (First 10 Columns)')
+    plt.tight_layout()
+    plt.savefig('description.png')
 
 
-    print("To see if how many of the values are missing ")
-    print(f"Missing Values: {X.isnull().sum()}")
-
-
-    print("to check the duplicate values")
-    print(f"Duplicate Values Check : {X.duplicated().sum()}")
-    " so there is not values such as the which are the duplicated or the like of hte such of "
-    "row which need to be removed for the duplicated but still for prevention we will drop_duplicagte"
-    df=df.drop_duplicates()
 
 
 
+    # now we will do some of the analysis on the data and the like of it and then we will jumpt to the liek of the data cleaning and the like of then the like of the feature engineering and the liek fi t and that is the teh like of whole scenoro for it 
 
 
-    print("IMPOSSIBLE VALUES CHECK")
+    df=X.copy()
+    df['num']=Y.values
+
+    plt.figure(figsize=(8,5))
+    sns.boxplot(x='num', y='age', data=df)
+    plt.title("Age vs Heart Disease")
+    plt.xlabel('Diease Chances (0: No disease, (1-4): Disease)')
+    plt.ylabel('Age')
+    plt.tight_layout()
+    plt.savefig('Age_vs_Heart.png')
+    plt.show()
 
 
-    # 1. Age - should be between 0 and 120
-    print("\n1. Age (valid: 0-120):")
-    print(f"   Min: {df['age'].min()}, Max: {df['age'].max()}")
-    print(f"   Impossible: {(df['age'] < 0).sum() + (df['age'] > 120).sum()}")
+    plt.figure(figsize=(8,5))
+    pd.crosstab(df['sex'],df['num']).plot(kind='bar')
+    plt.title('sex vs Heart Disease')
+    plt.xlabel('Gender (0=female,1=Male)')
+    plt.ylabel('Heart disease count ')
+    plt.legend(title="Disease Severity (num)")
+    plt.tight_layout()
+    plt.savefig('Sex_vs_Heart Disease')
 
-    # 2. Sex - should be 0 or 1
-    print("\n2. Sex (valid: 0,1):")
-    print(f"   Values: {df['sex'].unique()}")
-    print(f"   Impossible: {((df['sex'] != 0) & (df['sex'] != 1)).sum()}")
+    # now we will like of the do the same the liek of the with like of hte chest pain type becuase it will also the like of the bceom the ike of hte strong feature so we cannnot skip it and the lie of it 
 
-    # 3. cp - should be 0,1,2,3
-    print("\n3. Chest Pain (valid: 0,1,2,3):")
-    print(f"   Values: {sorted(df['cp'].unique())}")
-    print(f"   Impossible: {((df['cp'] < 0) | (df['cp'] > 3)).sum()}")
+    plt.figure(figsize=(8,5))
+    pd.crosstab(df['cp'], df['num']).plot(kind='bar')
+    plt.title('Chest Pain Type vs Heart Disease')
+    plt.xlabel('Chest Pain Type')
+    plt.ylabel('Count')
+    plt.legend(title='Disease Severity (num)')
+    plt.tight_layout()
+    plt.savefig('cp_vs_heart_disease.png')
 
-    # 4. trestbps - resting BP: 80-250 realistic
-    print("\n4. Resting BP (realistic: 80-250):")
-    print(f"   Min: {df['trestbps'].min()}, Max: {df['trestbps'].max()}")
-    print(f"   Too low (<80): {(df['trestbps'] < 80).sum()}")
-    print(f"   Too high (>250): {(df['trestbps'] > 250).sum()}")
 
-    # 5. chol - cholesterol: 100-600 realistic
-    print("\n5. Cholesterol (realistic: 100-600):")
-    print(f"   Min: {df['chol'].min()}, Max: {df['chol'].max()}")
-    print(f"   Too low (<100): {(df['chol'] < 100).sum()}")
-    print(f"   Too high (>600): {(df['chol'] > 600).sum()}")
+    # now we will talked about the like of the heart disase vs the like of hte resting blood pressure which is like of the also the good feature for the lie of the doing and passing the like of the heart deisase and this data clearly see me the like of hte some of the medical data the origanl one 
 
-    # 6. fbs - should be 0 or 1
-    print("\n6. Fasting Blood Sugar (valid: 0,1):")
-    print(f"   Values: {df['fbs'].unique()}")
+    plt.figure(figsize=(8,5))
+    sns.boxplot(x='num', y='trestbps', data=df)
+    plt.title('Resting Blood Pressure vs Heart Disease')
+    plt.xlabel('Disease Severity (0=No Disease)')
+    plt.ylabel('Blood Pressure (mm Hg)')
+    plt.tight_layout()
+    plt.savefig('trestbps_vs_disease.png')
 
-    # 7. restecg - should be 0,1,2
-    print("\n7. Resting ECG (valid: 0,1,2):")
-    print(f"   Values: {sorted(df['restecg'].unique())}")
+    # nwo the like  of the we will see teh like of hte to see if the like of there is the high high colestrol level is the like of hte related to the like of hte 
+    plt.figure(figsize=(8,5))
+    sns.boxplot(x='num', y='chol', data=df)
+    plt.title('Cholesterol vs Heart Disease')
+    plt.xlabel('Disease Severity (0=No Disease)')
+    plt.ylabel('Cholesterol (mg/dL)')
+    plt.tight_layout()
+    plt.savefig('chol_vs_disease.png')
+    plt.show()
 
-    # 8. thalach - max HR: 60-250 realistic
-    print("\n8. Max Heart Rate (realistic: 60-250):")
-    print(f"   Min: {df['thalach'].min()}, Max: {df['thalach'].max()}")
-    print(f"   Too low (<60): {(df['thalach'] < 60).sum()}")
-    print(f"   Too high (>250): {(df['thalach'] > 250).sum()}")
+    # this is the like of the plot which is is known as the like of the pie chart and the like of the which we used for the like of hte for the percentage of teh resting blood sugar
+    df['has_disease'] = (df['num'] > 0).astype(int)
 
-    # 9. exang - should be 0 or 1
-    print("\n9. Exercise Angina (valid: 0,1):")
-    print(f"   Values: {df['exang'].unique()}")
+    # ========== PLOT 1: Pie Chart ==========
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    fbs0 = df[df['fbs'] == 0]['has_disease'].value_counts()
+    axes[0].pie(fbs0, labels=['No Disease', 'Disease'], autopct='%1.1f%%', 
+                colors=['green', 'red'], startangle=90)
+    axes[0].set_title('Normal Blood Sugar (fbs=0)')
+    fbs1 = df[df['fbs'] == 1]['has_disease'].value_counts()
+    axes[1].pie(fbs1, labels=['No Disease', 'Disease'], autopct='%1.1f%%', 
+                colors=['green', 'red'], startangle=90)
+    axes[1].set_title('High Blood Sugar (fbs=1)')
+    plt.suptitle('Fasting Blood Sugar vs Heart Disease', fontsize=14)
+    plt.tight_layout()
+    plt.savefig('fbs_pie.png')
 
-    # 10. oldpeak - should be >= 0 (ST depression can't be negative)
-    print("\n10. Oldpeak (valid: >= 0):")
-    print(f"    Min: {df['oldpeak'].min()}, Max: {df['oldpeak'].max()}")
-    print(f"    Negative values: {(df['oldpeak'] < 0).sum()}")
+    # this is the like of teh bar which is showing hte like of hte ecg pattern and the like of it and that is what we are doing right now 
+    ecg_disease = df.groupby('restecg')['has_disease'].mean() * 100
 
-    # 11. slope - should be 0,1,2
-    print("\n11. Slope (valid: 0,1,2):")
-    print(f"    Values: {sorted(df['slope'].unique())}")
+    plt.figure(figsize=(6, 4))
+    plt.bar(['0', '1', '2'], ecg_disease.values, color=['green', 'orange', 'red'])
+    plt.title('ECG vs Heart Disease')
+    plt.xlabel('ECG (0=Normal, 1=ST-T, 2=LVH)')
+    plt.ylabel('Disease %')
+    plt.ylim(0, 100)
+    plt.tight_layout()
+    plt.savefig('restecg_vs_disease.png')
 
-    # 12. ca - should be 0,1,2,3,4
-    print("\n12. CA (valid: 0,1,2,3):")
-    print(f"    Values: {sorted(df['ca'].dropna().unique())}")
+    # this is to show whta pattern has maximum heart has with the like of the heart disease 
 
-    # 13. thal - should be 0,1,2,3
-    print("\n13. Thal (valid: 0,1,2,3):")
-    print(f"    Values: {sorted(df['thal'].dropna().unique())}")
+    avg_thalach = df.groupby('num')['thalach'].mean()
 
-    # 14. num - target: 0,1,2,3,4
-    print("\n14. Target num (valid: 0,1,2,3,4):")
-    print(f"    Values: {sorted(df['num'].unique())}")
+    plt.figure(figsize=(7, 5))
+    plt.bar([str(i) for i in avg_thalach.index], avg_thalach.values, 
+            color=['green', 'lightcoral', 'coral', 'red', 'darkred'])
+    plt.title('Average Max Heart Rate vs Disease')
+    plt.xlabel('Disease Severity (0=No Disease)')
+    plt.ylabel('Average Max Heart Rate (bpm)')
+    plt.tight_layout()
+    plt.savefig('thalach_vs_disease.png')
 
-    print("Outlier checkers ")
+    # now we will work with the like of hte exercise induxed angine 
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-    numerical_features = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
-    # Calculate how many subplots needed
-    n_features = len(numerical_features)
-    n_cols = 3
-    n_rows = (n_features + n_cols - 1) // n_cols  # Ceiling division
+    ex0 = df[df['exang'] == 0]['has_disease'].value_counts()
+    axes[0].pie(ex0, labels=['No Disease', 'Disease'], autopct='%1.1f%%', colors=['green', 'red'])
+    axes[0].set_title('No Exercise Angina (0)')
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
-    axes = axes.flatten()
-
-    for idx, col in enumerate(numerical_features):
-        axes[idx].boxplot(df[col])
-        axes[idx].set_title(f'{col} - Outlier Check')
-        
-        Q1 = df[col].quantile(0.25)
-        Q3 = df[col].quantile(0.75)
-        IQR = Q3 - Q1
-        outliers = df[(df[col] < Q1 - 1.5*IQR) | (df[col] > Q3 + 1.5*IQR)]
-        print(f"{col}: {len(outliers)} outliers detected")
-
-    # Hide unused subplots
-    for idx in range(len(numerical_features), len(axes)):
-        axes[idx].set_visible(False)
+    # Pie for exang=1
+    ex1 = df[df['exang'] == 1]['has_disease'].value_counts()
+    axes[1].pie(ex1, labels=['No Disease', 'Disease'], autopct='%1.1f%%', colors=['green', 'red'])
+    axes[1].set_title('Has Exercise Angina (1)')
 
     plt.tight_layout()
-    plt.savefig("Outlier_checker.png")
+    plt.savefig('exang_pie_plot.png')
 
-    df = df.drop(columns=['ca', 'thal'])
+    # this is the like of hte correlation heatmap and the like of it so that we can find the like of hte pattern for it 
 
-    df = df.dropna()
-
-    df = df.reset_index(drop=True)
-    
-    print(f"\nFinal cleaned shape: {df.shape}")
-    print(f"Remaining columns: {df.columns.tolist()}")
-    
-    return df
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(df.corr(), annot=True, cmap='RdBu_r', center=0, fmt='.2f')
+    plt.title('Correlation Heatmap - All Features vs num')
+    plt.tight_layout()
+    plt.savefig('correlation_heatmap.png')
